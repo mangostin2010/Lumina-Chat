@@ -70,6 +70,8 @@
                                     color: '#abb2bf',
                                     borderRadius: '0.75rem',
                                     padding: '1.25rem',
+                                    overflowX: 'auto', // [FIX] 코드 블록 내부 스크롤 허용
+                                    maxWidth: '100%',  // [FIX] 부모 너비 초과 방지
                                 },
                             }
                         },
@@ -154,6 +156,13 @@
         .prose :where(p):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
             margin-bottom: 0 !important;
         }
+
+        /* [FIX] Code block overflow handling */
+        .prose pre {
+            overflow-x: auto !important;
+            white-space: pre;
+            max-width: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-[#0B0B0F] text-ink-800 dark:text-gray-200 font-sans antialiased flex overflow-hidden selection:bg-indigo-500/30 transition-colors duration-500 relative">
@@ -230,7 +239,6 @@
                     <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white mb-2">
                         <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     </div>
-                    <!-- HERE IS THE CHANGE: Using Jinja2 syntax to inject username -->
                     <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
                         Hello, {{ username }}.<br>
                         <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-500 dark:from-indigo-400 dark:to-purple-400">How can I help?</span>
@@ -477,6 +485,7 @@
             }
         }
 
+        // [FIX] min-w-0 추가하여 Flexbox 자식 요소가 부모 너비를 넘어가지 않도록 설정
         function appendMessage(role, content, animate = true) {
             const wrapper = document.getElementById('messages-wrapper');
             const isUser = role === 'user';
@@ -490,7 +499,7 @@
 
             div.innerHTML = `
                 ${avatar}
-                <div class="flex-1">
+                <div class="flex-1 min-w-0"> <!-- min-w-0 Added -->
                     <div class="${isUser ? 'bg-white/50 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-2xl rounded-tr-sm p-4 shadow-sm' : 'py-2 pl-2'}">
                         <div class="${isUser ? 'text-[16px] leading-relaxed text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium' : 'prose prose-slate dark:prose-invert max-w-none font-normal text-[16px] leading-8'}"></div>
                     </div>

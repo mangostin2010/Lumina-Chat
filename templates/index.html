@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark-reasonable.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='lighten.jpg') }}">
+    <meta name="theme-color" content="#000000">
+
     <!-- Configuration -->
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -516,6 +520,20 @@
 
             wrapper.appendChild(div);
             return contentDiv;
+        }
+    </script>
+
+    <script>
+        // 2. Service Worker 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                // 중요: 여기서 '/sw.js'는 우리가 app.py에서 만든 그 라우트입니다.
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('Service Worker 등록 성공! 범위:', registration.scope);
+                }, function(err) {
+                    console.log('Service Worker 등록 실패:', err);
+                });
+            });
         }
     </script>
 </body>

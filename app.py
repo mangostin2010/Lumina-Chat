@@ -2,7 +2,7 @@ import os
 import json
 import uuid
 import time
-from flask import Flask, render_template, request, Response, stream_with_context, jsonify, session, redirect, url_for
+from flask import Flask, render_template, request, Response, stream_with_context, jsonify, session, redirect, url_for, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import openai
 import requests
@@ -191,6 +191,13 @@ def chat():
     # Response 객체를 만들고 헤더에 Chat ID 포함
     response = Response(stream_with_context(generate()), mimetype='text/plain')
     response.headers['X-Chat-ID'] = chat_id
+    return response
+
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory('static', 'sw.js')
+    # 캐시 문제 방지를 위해 헤더 설정을 해주면 더 좋습니다 (선택사항)
+    response.headers['Cache-Control'] = 'no-cache' 
     return response
 
 if __name__ == '__main__':
