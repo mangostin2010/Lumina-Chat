@@ -4,3 +4,5 @@ openai
 requests
 httpx
 python-dotenv
+httpx[socks]
+gunicorn
