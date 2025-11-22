@@ -1,0 +1,6 @@
+Flask
+Werkzeug
+openai
+requests
+httpx
+python-dotenv

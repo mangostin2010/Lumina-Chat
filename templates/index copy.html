@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lumina Chat Interface</title>
+    
+    <!-- Fonts -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark-reasonable.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- Configuration -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        ink: { 900: '#111827', 800: '#1f2937', 500: '#6b7280', 400: '#9ca3af' },
+                    },
+                    animation: { 'blob': 'blob 7s infinite', 'fade-in': 'fadeIn 0.5s ease-out forwards' },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                maxWidth: 'none',
+                                color: theme('colors.ink.800'),
+                                lineHeight: '1.8',
+                                h1: { color: theme('colors.ink.900'), fontWeight: '800' },
+                                h2: { color: theme('colors.ink.900'), fontWeight: '700', marginTop: '1.5em' },
+                                code: {
+                                    color: '#e06c75',
+                                    backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                                    padding: '0.2em 0.4em',
+                                    borderRadius: '0.25rem',
+                                    fontWeight: '500',
+                                    fontFamily: theme('fontFamily.mono'),
+                                },
+                                'code::before': { content: '""' },
+                                'code::after': { content: '""' },
+                                pre: {
+                                    backgroundColor: '#282c34',
+                                    color: '#abb2bf',
+                                    borderRadius: '0.75rem',
+                                    padding: '1.25rem',
+                                },
+                            }
+                        },
+                        invert: {
+                            css: {
+                                color: theme('colors.gray.300'),
+                                h1: { color: theme('colors.white') },
+                                h2: { color: theme('colors.gray.100') },
+                                code: { color: '#e5c07b', backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+                            }
+                        }
+                    })
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { height: 100dvh; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.5); border-radius: 20px; }
+        .dark ::-webkit-scrollbar-thumb { background-color: rgba(75, 85, 99, 0.5); }
+        ::-webkit-scrollbar-thumb:hover { background-color: rgba(107, 114, 128, 0.8); }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+        .dark .glass-panel {
+            background: rgba(17, 24, 39, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-input {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px) saturate(200%);
+            -webkit-backdrop-filter: blur(20px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+        .dark .glass-input {
+            background: rgba(31, 41, 55, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .cursor-blink::after {
+            content: ''; display: inline-block; width: 4px; height: 18px;
+            background-color: #6366f1; margin-left: 4px; vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .dropdown-enter { animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        p, li {
+            line-height: 1.7 !important;
+        }
+
+        .truncate {
+            font-size: 15px;
+        }
+
+        .prose :where(li):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+            margin-top: 0.25em !important;
+            margin-bottom: 0.25em !important;
+        }
+
+        .prose :where(ul ul, ul ol, ol ul, ol ol):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+            margin-top: 0 !important;
+        }
+
+        .prose :where(p):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+            margin-bottom: 0 !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-[#0B0B0F] text-ink-800 dark:text-gray-200 font-sans antialiased flex overflow-hidden selection:bg-indigo-500/30 transition-colors duration-500 relative">
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 hidden md:hidden transition-opacity duration-300"></div>
+
+    <!-- Ambient Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-indigo-300/30 dark:bg-indigo-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob"></div>
+        <div class="absolute top-[-10%] right-[-10%] w-[35vw] h-[35vw] bg-purple-300/30 dark:bg-purple-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[45vw] h-[45vw] bg-pink-300/30 dark:bg-pink-900/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-[280px] glass-panel flex flex-col border-r-0 z-50 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 md:static md:flex md:relative transition-transform duration-300 h-full">
+        <div class="p-5 flex items-center justify-between">
+            <div class="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/><path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 16V8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white">Lumina</span>
+            </div>
+        </div>
+        
+        <div class="px-4 pb-4">
+            <button onclick="startNewChat(); toggleSidebar();" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 transition-all duration-200 text-sm font-semibold text-gray-700 dark:text-gray-200 border border-transparent hover:border-white/20 group shadow-sm hover:shadow-md bg-white/40 dark:bg-gray-800/40">
+                <span class="text-lg">+</span> New Chat
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-3 space-y-1 py-2 scrollbar-hide">
+            <div class="px-3 py-2 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-4 mb-1">History</div>
+            <div id="history-list" class="space-y-1"></div>
+        </div>
+
+        <div class="p-4 border-t border-gray-200/20 dark:border-white/5">
+            <div class="flex items-center justify-between">
+                <button onclick="toggleTheme()" class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/5 transition cursor-pointer text-gray-700 dark:text-gray-300">
+                    <div class="w-8 h-8 rounded-full bg-gray-200/50 dark:bg-gray-700/50 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                    </div>
+                </button>
+                <a href="/logout" class="text-xs text-red-500 hover:text-red-600 font-medium p-2">Sign Out</a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative h-full min-w-0 z-10">
+        
+        <header class="absolute top-0 left-0 right-0 z-30 h-16 md:h-20 flex items-center justify-between px-4 md:px-10">
+            <div class="relative">
+                <button id="model-trigger" onclick="toggleModelMenu()" class="glass-panel px-4 py-2 rounded-2xl flex items-center gap-2 transition-all hover:bg-white/80 dark:hover:bg-gray-800/80">
+                    <div class="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
+                        <span id="current-model-name">GPT-5.1</span>
+                        <svg id="dropdown-arrow" class="w-3 h-3 opacity-50 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </button>
+                <div id="model-dropdown" class="hidden absolute top-full left-0 mt-2 w-64 glass-panel rounded-2xl overflow-hidden shadow-xl z-50 p-1.5 origin-top-left">
+                    <div class="max-h-[300px] overflow-y-auto scrollbar-hide" id="model-list-container">
+                        <div class="p-3 text-center text-xs text-gray-500">Loading models...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Panel Button -->
+            <button onclick="toggleSidebar()" class="md:hidden p-2 glass-panel rounded-xl text-gray-700 dark:text-gray-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+        </header>
+
+        <div id="chat-container" class="flex-1 overflow-y-auto scroll-smooth pt-20 md:pt-24 pb-32 px-4">
+            <div id="welcome-screen" class="h-full flex flex-col items-center justify-center max-w-3xl mx-auto space-y-12 animate-fade-in">
+                <div class="text-center space-y-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 text-white mb-2">
+                        <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <!-- HERE IS THE CHANGE: Using Jinja2 syntax to inject username -->
+                    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                        Hello, {{ username }}.<br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-500 dark:from-indigo-400 dark:to-purple-400">How can I help?</span>
+                    </h1>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full px-4">
+                    <button onclick="fillInput('React의 useEffect 훅에 대해 설명해줘')" class="group text-left p-6 glass-panel rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg></span>
+                            <span class="font-bold text-gray-800 dark:text-gray-100 group-hover:text-indigo-600 transition-colors">Coding</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">React useEffect 훅의 동작 원리 설명</p>
+                    </button>
+                    <button onclick="fillInput('상대성 이론을 쉽게 설명해줘')" class="group text-left p-6 glass-panel rounded-2xl hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></span>
+                            <span class="font-bold text-gray-800 dark:text-gray-100 group-hover:text-purple-600 transition-colors">Concept</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">상대성 이론 설명</p>
+                    </button>
+                </div>
+            </div>
+            <div id="messages-wrapper" class="flex flex-col gap-8 max-w-3xl mx-auto"></div>
+        </div>
+
+        <div class="absolute bottom-0 left-0 w-full z-20 pb-4 md:pb-8 px-4 pointer-events-none">
+            <div class="max-w-3xl mx-auto pointer-events-auto">
+                <div class="glass-input rounded-[2rem] p-2 transition-all duration-300 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:shadow-2xl focus-within:shadow-indigo-500/10">
+                    <div class="flex items-end gap-2">
+                        <textarea id="user-input" rows="1" class="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 p-3.5 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-[16px] leading-relaxed resize-none max-h-32 md:max-h-40 font-medium" placeholder="Message Lumina..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                        <button id="send-btn" onclick="sendMessage()" class="mb-1 p-3 rounded-full bg-black dark:bg-white text-white dark:text-black hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50 flex-shrink-0">
+                            <svg class="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let chatHistory = [];
+        let currentModel = "gpt-5.1";
+        let modelsList = [];
+        let currentChatId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchModels();
+            loadHistory();
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => {
+                    document.body.style.height = window.visualViewport.height + 'px';
+                    scrollToBottom();
+                });
+            }
+        });
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function startNewChat() {
+            currentChatId = null;
+            chatHistory = [];
+            document.getElementById('messages-wrapper').innerHTML = '';
+            document.getElementById('welcome-screen').style.display = 'flex';
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/history');
+                const chats = await res.json();
+                const list = document.getElementById('history-list');
+                list.innerHTML = '';
+                
+                chats.forEach(chat => {
+                    const div = document.createElement('div');
+                    div.className = `group px-4 py-3 flex items-center justify-between text-[13px] rounded-xl cursor-pointer transition-all duration-200 truncate font-medium border border-transparent 
+                        ${chat.id === currentChatId ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100/50 dark:hover:bg-white/5 hover:border-white/10'}`;
+                    
+                    div.innerHTML = `
+                        <div class="truncate flex-1" onclick="loadChat('${chat.id}'); if(window.innerWidth < 768) toggleSidebar();">${chat.title}</div>
+                        <button onclick="deleteChat(event, '${chat.id}')" class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition-opacity">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                console.error("Failed to load history", e);
+            }
+        }
+
+        async function loadChat(chatId) {
+            try {
+                const res = await fetch('/history');
+                const chats = await res.json();
+                const chat = chats.find(c => c.id === chatId);
+                if (!chat) return;
+
+                currentChatId = chatId;
+                chatHistory = chat.messages;
+
+                document.getElementById('welcome-screen').style.display = 'none';
+                const wrapper = document.getElementById('messages-wrapper');
+                wrapper.innerHTML = '';
+
+                chatHistory.forEach(msg => {
+                    appendMessage(msg.role, msg.content, false);
+                });
+                scrollToBottom();
+                loadHistory();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function deleteChat(e, chatId) {
+            e.stopPropagation();
+            if (!confirm('Delete this chat?')) return;
+            
+            await fetch(`/history/${chatId}`, { method: 'DELETE' });
+            if (currentChatId === chatId) startNewChat();
+            loadHistory();
+        }
+
+        async function fetchModels() {
+            try {
+                const response = await fetch('/models');
+                const json = await response.json();
+                if (json.data) { modelsList = json.data; renderModelList(); }
+            } catch (error) { console.error(error); }
+        }
+
+        function renderModelList() {
+            const container = document.getElementById('model-list-container');
+            container.innerHTML = '';
+            modelsList.forEach(model => {
+                const isSelected = model.id === currentModel;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors text-sm ${isSelected ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-semibold' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/10'}`;
+                div.onclick = () => selectModel(model);
+                div.innerHTML = `<span>${model.name || model.id}</span>${isSelected ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}`;
+                container.appendChild(div);
+            });
+        }
+
+        function selectModel(model) {
+            currentModel = model.id;
+            document.getElementById('current-model-name').innerText = model.name || model.id;
+            toggleModelMenu(); renderModelList();
+        }
+
+        function toggleModelMenu() {
+            const dropdown = document.getElementById('model-dropdown');
+            const arrow = document.getElementById('dropdown-arrow');
+            if (dropdown.classList.contains('hidden')) {
+                dropdown.classList.remove('hidden'); dropdown.classList.add('dropdown-enter'); arrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdown.classList.add('hidden'); dropdown.classList.remove('dropdown-enter'); arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const trigger = document.getElementById('model-trigger');
+            const dropdown = document.getElementById('model-dropdown');
+            if (!trigger.contains(e.target) && !dropdown.contains(e.target) && !dropdown.classList.contains('hidden')) toggleModelMenu();
+        });
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) { document.documentElement.classList.remove('dark'); localStorage.theme = 'light'; } 
+            else { document.documentElement.classList.add('dark'); localStorage.theme = 'dark'; }
+        }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
+        function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+        function fillInput(text) { const input = document.getElementById('user-input'); input.value = text; autoResize(input); input.focus(); }
+        function scrollToBottom() { const c = document.getElementById('chat-container'); c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' }); }
+
+        marked.setOptions({ highlight: (code, lang) => hljs.highlight(code, { language: hljs.getLanguage(lang) ? lang : 'plaintext' }).value, breaks: true });
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            userInput.value = ''; userInput.style.height = 'auto';
+            document.getElementById('welcome-screen').style.display = 'none';
+            
+            chatHistory.push({ role: "user", content: text });
+            appendMessage('user', text);
+            scrollToBottom();
+
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.disabled = true;
+            const aiContentDiv = appendMessage('ai', '<span class="cursor-blink"></span>');
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        messages: chatHistory, 
+                        model: currentModel,
+                        chat_id: currentChatId 
+                    })
+                });
+
+                const serverChatId = response.headers.get('X-Chat-ID');
+                if (serverChatId) {
+                    currentChatId = serverChatId;
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedText = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    accumulatedText += decoder.decode(value, { stream: true });
+                    aiContentDiv.innerHTML = marked.parse(accumulatedText);
+                    aiContentDiv.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+                    
+                    const container = document.getElementById('chat-container');
+                    if (container.scrollHeight - container.scrollTop - container.clientHeight < 250) scrollToBottom();
+                }
+                chatHistory.push({ role: "assistant", content: accumulatedText });
+                loadHistory();
+
+            } catch (error) {
+                aiContentDiv.innerHTML += `<br><span class="text-red-500 text-sm">Error: ${error.message}</span>`;
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        function appendMessage(role, content, animate = true) {
+            const wrapper = document.getElementById('messages-wrapper');
+            const isUser = role === 'user';
+            
+            const div = document.createElement('div');
+            div.className = `flex gap-5 ${isUser ? 'flex-row-reverse' : 'flex-row'} ${animate ? 'animate-fade-in' : ''} w-full group`;
+            
+            const avatar = isUser 
+                ? `<div class="w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0"><svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>`
+                : ``;
+
+            div.innerHTML = `
+                ${avatar}
+                <div class="flex-1">
+                    <div class="${isUser ? 'bg-white/50 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-2xl rounded-tr-sm p-4 shadow-sm' : 'py-2 pl-2'}">
+                        <div class="${isUser ? 'text-[16px] leading-relaxed text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium' : 'prose prose-slate dark:prose-invert max-w-none font-normal text-[16px] leading-8'}"></div>
+                    </div>
+                </div>
+            `;
+            
+            const contentDiv = div.querySelector(`.${isUser ? 'whitespace-pre-wrap' : 'prose'}`);
+            if (isUser) contentDiv.textContent = content;
+            else contentDiv.innerHTML = marked.parse(content);
+
+            if (!animate && !isUser) {
+                contentDiv.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+            }
+
+            wrapper.appendChild(div);
+            return contentDiv;
+        }
+    </script>
+</body>
+</html>
